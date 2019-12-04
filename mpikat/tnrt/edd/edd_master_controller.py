@@ -29,14 +29,15 @@ from tornado.gen import Return, coroutine
 from katcp import Sensor, AsyncReply
 from katcp.kattypes import request, return_reply, Str
 from mpikat.core.master_controller import MasterController
-from mpikat.effelsberg.edd.edd_roach2_product_controller import (
-    EddRoach2ProductController)
-from mpikat.effelsberg.edd.edd_worker_wrapper import EddWorkerPool
+#from mpikat.effelsberg.edd.edd_roach2_product_controller import (EddRoach2ProductController)
+# from mpikat.effelsberg.edd.edd_product_controller import EddProductController
+from edd_product_controller import EddProductController
+from edd_worker_wrapper import EddWorkerPool
 from mpikat.effelsberg.edd.edd_scpi_interface import EddScpiInterface
 from mpikat.effelsberg.edd.edd_digpack_client import DigitiserPacketiserClient
 from mpikat.effelsberg.edd.edd_fi_client import EddFitsInterfaceClient
 
-# ?halt message means shutdown everything and power off all machines
+# halt message means shutdown everything and power off all machines
 
 log = logging.getLogger("mpikat.edd_master_controller")
 EDD_REQUIRED_KEYS = []
@@ -76,8 +77,11 @@ class EddMasterController(MasterController):
         self._scpi_interface = None
         self._packetisers = []
         self._fits_interfaces = []
+        # super(EddMasterController, self).__init__(ip, port, EddWorkerPool())
         super(EddMasterController, self).__init__(ip, port, EddWorkerPool())
-
+        # self._dummy = self._server_pool.add("127.0.0.1", 5000)
+        self._dummy_worker_wrapper = EddWorkerPool().make_wrapper(ip,5000)
+        
     def start(self):
         """
         @brief    Start the server
@@ -166,7 +170,7 @@ class EddMasterController(MasterController):
                           (options: KATCP, SCPI)
         """
         mode = mode.upper()
-        if not mode in self.CONTROL_MODES:
+        if mode not in self.CONTROL_MODES:
             raise UnknownControlMode("Unknown mode '{}', valid modes are '{}' ".format(
                 mode, ", ".join(self.CONTROL_MODES)))
         else:
@@ -298,38 +302,66 @@ class EddMasterController(MasterController):
             log.error("Unable to parse configuration dictionary")
             raise error
 
-        log.info("Configuring digitisers/packetisers")
-        dp_configure_futures = []
-        for dp_config in config_dict["packetisers"]:
-            dp_configure_futures.append(
-                self._packetiser_config_helper(dp_config))
-        for future in dp_configure_futures:
-            dp_client = yield future
-            self._packetisers.append(dp_client)
+        # log.info("Configuring digitisers/packetisers")
+        # dp_configure_futures = []
+        # for dp_config in config_dict["packetisers"]:
+        #     dp_configure_futures.append(
+        #         self._packetiser_config_helper(dp_config))
+        # for future in dp_configure_futures:
+        #     dp_client = yield future
+        #     self._packetisers.append(dp_client)
 
         log.info("Configuring products")
         product_configure_futures = []
         for product_config in config_dict["products"]:
             product_id = product_config["id"]
-            if product_config["type"] == "roach2":
-                self._products[product_id] = EddRoach2ProductController(self, product_id,
-                                                                        (self._r2rm_host, self._r2rm_port))
+            # if product_config["type"] == "roach2":
+            #     self._products[product_id] = EddRoach2ProductController(self, product_id,
+            #                                                             (self._r2rm_host, self._r2rm_port))
+            # else:
+            #     raise NotImplementedError(
+            #         "Only roach2 products are currently supported")
+
+            if product_config["type"] == "server":
+                self._products[product_id] = EddProductController(self, product_id)
             else:
                 raise NotImplementedError(
-                    "Only roach2 products are currently supported")
-            future = self._products[product_id].configure(product_config)
-            product_configure_futures.append(future)
-        for future in product_configure_futures:
-            yield future
+                    "No have products are currently supported")
+            
+            log.info(self._server_pool.add('172.17.0.2', '5000'))
+            r = json.dumps(product_config)   # Teep pulsar_sim
+            future = self._products[product_id].configure(r)  # Teep pulsar_sim
+            
+            # mytest = kat.BlockingRequest("127.0.0.1","5000")
+            # mytest.start()
+            # mytest.mytest()
+             
+            # log.info('1111111: _setup_sensors()')
+            # log.info(self.setup_sensors())
+            # log.info('2222222: _server_pool.add()')
+            # log.info(self._server_pool.add('127.0.0.1', '5000'))
+            # log.info('3333333: _server_pool._servers')
+            # log.info(self._server_pool._servers)
+            # log.info('4444444: _server_pool._allocated')
+            # log.info(self._server_pool._allocated)
+            # r = json.dumps(product_config)   # Teep pulsar_sim
+            # future = self._products[product_id].configure(r)  # Teep pulsar_sim
+            # log.info('555555: _server_pool._allocated')
+            # log.info(self._server_pool._allocated)
+          
+            # future = self._products[product_id].configure(product_config)
+            # product_configure_futures.append(future)
+        # for future in product_configure_futures:
+        #     yield future
 
-        log.info("Configuring FITS interfaces")
-        for fi_config in config_dict["fits_interfaces"]:
-            fi = EddFitsInterfaceClient(fi_config["id"], fi_config["address"])
-            yield fi.configure(fi_config)
-            self._fits_interfaces.append(fi)
-        self._edd_config_sensor.set_value(config_json)
-        self._update_products_sensor()
-        log.info("Successfully configured EDD")
+        # log.info("Configuring FITS interfaces")
+        # for fi_config in config_dict["fits_interfaces"]:
+        #     fi = EddFitsInterfaceClient(fi_config["id"], fi_config["address"])
+        #     yield fi.configure(fi_config)
+        #     self._fits_interfaces.append(fi)
+        # self._edd_config_sensor.set_value(config_json)
+        # self._update_products_sensor()
+        # log.info("Successfully configured EDD")
 
     @request()
     @return_reply()
@@ -461,6 +493,32 @@ class EddMasterController(MasterController):
         for product in self._products.values():
             yield product.capture_stop()
 
+    # Teep - Add requset_mytest for testing pulsar:dspsr simulation mode 
+    @request()
+    @return_reply(Str())
+    def request_my_dspsr_test(self, req):
+        """
+        @brief      Deconfigure pipeline
+        """
+        @coroutine
+        def my_dspsr_test_wrapper():
+            try:
+                yield self.my_dspsr_test()
+            except Exception as error:
+                log.exception(str(error))
+                req.reply("fail", str(error))
+            else:
+                req.reply("ok")
+        self.ioloop.add_callback(my_dspsr_test_wrapper)
+        raise AsyncReply
+
+    @coroutine
+    def my_dspsr_test(self):
+        log.info("DSPSR simulation processing ... ")
+        for product in self._products.values():
+            yield product.dspsr_start()
+        log.info("DSPSR simulation processing complete")
+    # -------------------------------------------------------------------
 
 @coroutine
 def on_shutdown(ioloop, server):
