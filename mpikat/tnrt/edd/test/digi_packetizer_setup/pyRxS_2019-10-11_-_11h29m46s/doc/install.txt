@@ -1,0 +1,10 @@
+
+
+Linux:
+
+	$> sudo aptitude install python-gtk2
+	$> sudo aptitude install python-matplotlib
+	$> sudo aptitude install python-pip
+	$> sudo pip install katcp
+
+
