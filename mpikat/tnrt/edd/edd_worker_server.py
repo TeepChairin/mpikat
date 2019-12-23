@@ -165,23 +165,23 @@ class EddWorkerServer(AsyncDeviceServer):
     @coroutine
     def mytest(self):
         log.info("DSPSR simulation processing ... ")
-#	out = subprocess.run(['dspsr', '-F 128:D -E 1644-4559.eph -P 1644-4559.polyco 1644-4559.cpsr2'], capture_output=True)
-	p = subprocess.Popen(['dspsr', '-F', ' 128:D', '-E', '1644-4559.eph', '-P', '1644-4559.polyco', '1644-4559.cpsr2'], stdout=subprocess.PIPE)
-	output, err = p.communicate()
-	print("Running dspsr ... \n", output)
+    	# out = subprocess.run(['dspsr', '-F 128:D -E 1644-4559.eph -P 1644-4559.polyco 1644-4559.cpsr2'], capture_output=True)
+        p = subprocess.Popen(['dspsr', '-F', ' 128:D', '-E', '1644-4559.eph', '-P', '1644-4559.polyco', '1644-4559.cpsr2'], stdout=subprocess.PIPE)
+        output, err = p.communicate()
+        print("Running dspsr ... \n", output)
         log.info("DSPSR simulation processing complete")
 
-#        log.info("make psrplot to PNG result ...  ")
-#	p = subprocess.Popen(['psrplot', '-pG', 'jp', 'm2007'], stdout=subprocess.PIPE)
-#	output, err = p.communicate()
-#	print("Running scp command ... \n", output)
-#       log.info("make PNG complte!")
+        # log.info("make psrplot to PNG result ...  ")
+	    # p = subprocess.Popen(['psrplot', '-pG', 'jp', 'm2007'], stdout=subprocess.PIPE)
+	    # output, err = p.communicate()
+	    # print("Running scp command ... \n", output)
+        # log.info("make PNG complte!")
 
-#        log.info("Copy result(.ar file) to the server ...  ")
-#	p = subprocess.Popen(['sshpass', '-p', '1234', 'scp', 'r', 'user1@192.160.1.140:/home/user1/Downloads'], stdout=subprocess.PIPE)
-#	output, err = p.communicate()
-#	print("Running scp command ... \n", output)
- #       log.info("Copy result complte!")
+        # log.info("Copy result(.ar file) to the server ...  ")
+        # p = subprocess.Popen(['sshpass', '-p', '1234', 'scp', 'r', 'user1@192.160.1.140:/home/user1/Downloads'], stdout=subprocess.PIPE)
+        # output, err = p.communicate()
+        # print("Running scp command ... \n", output)
+        # log.info("Copy result complte!")
 
 
     @request(Str())

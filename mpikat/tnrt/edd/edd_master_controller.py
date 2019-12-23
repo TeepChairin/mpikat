@@ -89,6 +89,7 @@ class EddMasterController(MasterController):
         super(EddMasterController, self).start()
         self._scpi_interface = EddScpiInterface(
             self, self._scpi_ip, self._scpi_port, self.ioloop)
+        self.setup_sensors()
 
     def stop(self):
         """

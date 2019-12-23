@@ -28,58 +28,64 @@ class BlockingRequest(BlockingClient):
 
     """
     def __init__(self, host, port):
-            device_host = host
-            device_port = port
-            super(BlockingRequest, self).__init__(device_host, device_port)
+        device_host = host
+        device_port = port
+        super(BlockingRequest, self).__init__(device_host, device_port)
 
     def __del__(self):
-            super(BlockingRequest, self).stop()
-            super(BlockingRequest, self).join()
+        super(BlockingRequest, self).stop()
+        super(BlockingRequest, self).join()
 
     def unescape_string(self, s):
-            def decode_match(match):
-                    return codecs.decode(match.group(0), 'unicode-escape')
-            return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
+        def decode_match(match):
+            return codecs.decode(match.group(0), 'unicode-escape')
+        return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
 
     def decode_katcp_message(self, s):
-            """
-            @brief      Render a katcp message human readable
+        """
+        @brief      Render a katcp message human readable
 
-            @params s   A string katcp message
-            """
-            return self.unescape_string(s).replace("\_", " ")
+        @params s   A string katcp message
+        """
+        return self.unescape_string(s).replace("\_", " ")
 
     def to_stream(self, reply, informs):
-            log.info(self.decode_katcp_message(reply.__str__()))
-            # for msg in reply:
-            #        log.info(self.decode_katcp_message(msg.__str__()))
-            for msg in informs:
-                    log.info(self.decode_katcp_message(msg.__str__()))
+        log.info(self.decode_katcp_message(reply.__str__()))
+        # for msg in reply:
+        #        log.info(self.decode_katcp_message(msg.__str__()))
+        for msg in informs:
+                log.info(self.decode_katcp_message(msg.__str__()))
 
     def start(self):
-            """
-            @brief      Start the blocking client
-
-            """
-            self.setDaemon(True)
-            super(BlockingRequest, self).start()
-            self.wait_protocol()
+        """
+        @brief      Start the blocking client
+        """
+        self.setDaemon(True)
+        super(BlockingRequest, self).start()
+        self.wait_protocol()
 
     def stop(self):
-            """
-            @brief      Stop the blocking client
+        """
+        @brief      Stop the blocking client
+        """
+        super(BlockingRequest, self).stop()
+        super(BlockingRequest, self).join()
 
-            """
-            super(BlockingRequest, self).stop()
-            super(BlockingRequest, self).join()
-
+    # def setup_sensors(self):
+    #     """
+    #     @brief      Start the blocking client
+    #     """
+    #     self.setDaemon(True)
+    #     super(BlockingRequest, self).setup_sensors()
+    #     self.wait_protocol()
+    
     def help(self):
-            """
-            @brief      Send help command to the server
+        """
+        @brief      Send help command to the server
 
-            """
-            reply, informs = self.blocking_request(katcp.Message.request("help"), timeout=20)
-            self.to_stream(reply, informs)
+        """
+        reply, informs = self.blocking_request(katcp.Message.request("help"), timeout=20)
+        self.to_stream(reply, informs)
 
 #        def configure(self, paras, sensors):
 #                reply, informs = self.blocking_request(katcp.Message.request("configure", paras, sensors))
@@ -114,22 +120,22 @@ class BlockingRequest(BlockingClient):
  
 
     def capture_start(self):
-            """
-            @brief      Send capture_start command to the server
+        """
+        @brief      Send capture_start command to the server
 
-            """
-            reply, informs = self.blocking_request(katcp.Message.request("capture-start"))
-            self.to_stream(reply, informs)
-            return reply
+        """
+        reply, informs = self.blocking_request(katcp.Message.request("capture-start"))
+        self.to_stream(reply, informs)
+        return reply
         
     def capture_stop(self):
-            """
-            @brief      Send capture_stop command to the server
+        """
+        @brief      Send capture_stop command to the server
 
-            """
-            reply, informs = self.blocking_request(katcp.Message.request("capture-stop"))
-            self.to_stream(reply, informs)
-            return reply
+        """
+        reply, informs = self.blocking_request(katcp.Message.request("capture-stop"))
+        self.to_stream(reply, informs)
+        return reply
 
     def my_dspsr_test(self):
         """
@@ -139,5 +145,43 @@ class BlockingRequest(BlockingClient):
         reply, informs = self.blocking_request(katcp.Message.request("my-dspsr-test"))
         self.to_stream(reply, informs)
         return reply
+    
+    def my_sensor_control(self,paras):
+        """
+        @brief      Send deconfigure command to the server
+
+        """
+        reply, informs = self.blocking_request(katcp.Message.request("sensor-control",paras))
+        self.to_stream(reply, informs)
+        return reply
+
+    def my_sensor_list_controlled(self):
+        """
+        @brief      Send deconfigure command to the server
+
+        """
+        reply, informs = self.blocking_request(katcp.Message.request("sensor-list-controlled"))
+        self.to_stream(reply, informs)
+        return reply
+
+    def my_sensor_control_all(self):
+        """
+        @brief      Send deconfigure command to the server
+
+        """
+        reply, informs = self.blocking_request(katcp.Message.request("sensor-control-all"))
+        self.to_stream(reply, informs)
+        return reply
+    
+    def my_sensor_set(self,name,value):
+        """
+        @brief      Send deconfigure command to the server
+
+        """
+        reply, informs = self.blocking_request(katcp.Message.request("sensor-set", name, value))
+        self.to_stream(reply, informs)
+        return reply
+    
+    
  
 
